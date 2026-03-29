@@ -1,0 +1,2129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MARS — A Journey Beyond</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Syne:wght@400;600;800&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+:root {
+  --mars-red: #c1440e;
+  --mars-orange: #e8621a;
+  --mars-dust: #d4875a;
+  --deep-space: #020408;
+  --nebula-blue: #0a1628;
+  --nebula-purple: #1a0d2e;
+  --flame-yellow: #ffd23f;
+  --accent-cyan: #00d4ff;
+  --text-primary: #f0e6d3;
+  --text-dim: #6a5a4a;
+  --star-white: #e8f4fd;
+}
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: auto; }
+
+body {
+  background: var(--deep-space);
+  color: var(--text-primary);
+  font-family: 'Syne', sans-serif;
+  overflow-x: hidden;
+  cursor: none;
+}
+
+/* ── CUSTOM CURSOR ── */
+#cursor {
+  position: fixed;
+  width: 20px; height: 20px;
+  border: 1.5px solid var(--accent-cyan);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9999;
+  transform: translate(-50%, -50%);
+  transition: width .2s, height .2s, border-color .3s, background .2s;
+  mix-blend-mode: screen;
+}
+#cursor-dot {
+  position: fixed;
+  width: 4px; height: 4px;
+  background: var(--accent-cyan);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9999;
+  transform: translate(-50%, -50%);
+  transition: background .3s;
+}
+body:hover #cursor { opacity: 1; }
+
+/* ── LOADING SCREEN ── */
+#loader {
+  position: fixed;
+  inset: 0;
+  background: var(--deep-space);
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+}
+#loader-mission {
+  font-family: 'Space Mono', monospace;
+  font-size: clamp(10px, 1.5vw, 13px);
+  color: var(--accent-cyan);
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  opacity: 0;
+  animation: fadeIn .5s .3s forwards;
+}
+#loader-countdown {
+  font-family: 'Bebas Neue', cursive;
+  font-size: clamp(80px, 20vw, 160px);
+  color: #fff;
+  line-height: 1;
+  text-shadow: 0 0 60px rgba(193,68,14,0.4);
+}
+#loader-bar-wrap {
+  width: min(320px, 80vw);
+  height: 2px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 2px;
+  overflow: hidden;
+  opacity: 0;
+  animation: fadeIn .5s .5s forwards;
+}
+#loader-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--mars-orange), var(--accent-cyan));
+  width: 0%;
+  transition: width .05s linear;
+}
+#loader-status {
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  color: var(--text-dim);
+  letter-spacing: 0.2em;
+}
+
+/* ── PROGRESS BAR ── */
+#progress-bar {
+  position: fixed;
+  top: 0; left: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--mars-orange), var(--accent-cyan));
+  z-index: 1000;
+  width: 0%;
+  transition: width .1s;
+  box-shadow: 0 0 10px var(--accent-cyan);
+}
+
+/* ── NAV ── */
+#nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 500;
+  padding: 20px 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  opacity: 0;
+  transition: opacity .4s;
+}
+#nav.visible { opacity: 1; }
+#nav-logo {
+  font-family: 'Bebas Neue', cursive;
+  font-size: 22px;
+  letter-spacing: 0.15em;
+  color: var(--text-primary);
+}
+#nav-acts {
+  display: flex;
+  gap: 32px;
+  list-style: none;
+}
+#nav-acts li {
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: color .2s;
+}
+#nav-acts li:hover, #nav-acts li.active { color: var(--accent-cyan); }
+
+/* ── CANVAS (starfield) ── */
+#space-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* ── SECTIONS ── */
+section {
+  position: relative;
+  z-index: 1;
+}
+
+/* ── ACT 1: HERO ── */
+#act1 {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  overflow: hidden;
+}
+
+.hero-overline {
+  font-family: 'Space Mono', monospace;
+  font-size: clamp(9px, 1.2vw, 12px);
+  color: var(--accent-cyan);
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  margin-bottom: 24px;
+  opacity: 0;
+}
+.hero-overline span { animation: blink 1.2s step-end infinite; }
+
+.hero-title {
+  font-family: 'Bebas Neue', cursive;
+  font-size: clamp(100px, 22vw, 200px);
+  line-height: 0.85;
+  letter-spacing: 0.05em;
+  color: #fff;
+  text-shadow:
+    0 0 40px rgba(232, 98, 26, 0.6),
+    0 0 100px rgba(193, 68, 14, 0.3);
+  animation: marsGlow 3s ease-in-out infinite alternate;
+  opacity: 0;
+}
+
+.hero-subtitle {
+  font-family: 'Syne', sans-serif;
+  font-size: clamp(13px, 2vw, 18px);
+  font-weight: 400;
+  color: var(--text-dim);
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  margin-top: 16px;
+  opacity: 0;
+}
+
+/* rocket SVG in hero */
+#hero-rocket-wrap {
+  position: absolute;
+  bottom: 120px;
+  left: 50%;
+  transform: translateX(-50%);
+  opacity: 0;
+}
+
+.scroll-hint {
+  position: absolute;
+  bottom: 36px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.3em;
+  color: var(--text-dim);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  opacity: 0;
+  animation: fadeIn .5s 3.5s forwards;
+}
+.scroll-arrow {
+  width: 1px;
+  height: 40px;
+  background: linear-gradient(to bottom, var(--accent-cyan), transparent);
+  animation: scrollPulse 2s ease-in-out infinite;
+}
+
+/* ── ACT 2: LAUNCH ── */
+#act2 {
+  height: 300vh;
+}
+#act2-sticky {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#launch-bg {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 100%, #1a3a5c 0%, #020408 60%);
+  opacity: 0;
+  transition: opacity .1s;
+}
+
+/* Ground / launchpad */
+#ground {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  height: 35vh;
+  background: linear-gradient(to top, #0a0f08 0%, #111a0f 40%, transparent 100%);
+}
+#launchpad {
+  position: absolute;
+  bottom: 35vh;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 120px;
+  height: 8px;
+  background: #1a2a1a;
+  border-radius: 4px;
+  box-shadow: 0 0 20px rgba(0,212,255,0.1);
+}
+#launchpad::before {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 35vh;
+  background: linear-gradient(to bottom, #1a2a1a, transparent);
+}
+
+/* Earth horizon */
+#earth-horizon {
+  position: absolute;
+  bottom: -10%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 200vw;
+  height: 200vw;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at 50% 40%, #1e4a8c 0%, #0d2b5e 40%, #061524 70%);
+  opacity: 0;
+}
+#earth-glow {
+  position: absolute;
+  bottom: 0;
+  left: 0; right: 0;
+  height: 30vh;
+  background: linear-gradient(to top, rgba(30,107,184,0.15), transparent);
+  opacity: 0;
+}
+
+/* Rocket in launch scene */
+#launch-rocket {
+  position: absolute;
+  bottom: calc(35vh + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+}
+
+/* HUD */
+#hud {
+  position: absolute;
+  left: 40px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: 'Space Mono', monospace;
+  font-size: clamp(10px, 1.3vw, 12px);
+  color: var(--accent-cyan);
+  line-height: 2;
+  letter-spacing: 0.05em;
+  opacity: 0;
+  z-index: 20;
+}
+#hud .hud-label { color: var(--text-dim); }
+#hud .hud-val { color: var(--accent-cyan); }
+
+#act2-title {
+  position: absolute;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'Bebas Neue', cursive;
+  font-size: clamp(40px, 8vw, 80px);
+  letter-spacing: 0.15em;
+  color: rgba(255,255,255,0);
+  text-shadow: 0 0 30px rgba(255,210,63,0);
+  z-index: 20;
+  white-space: nowrap;
+}
+
+/* Shockwave */
+#shockwave {
+  position: absolute;
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: transparent;
+  border: 2px solid rgba(255,210,63,0.8);
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  z-index: 5;
+  pointer-events: none;
+}
+
+/* ── ACT 3: TRAVEL ── */
+#act3 {
+  min-height: 300vh;
+  position: relative;
+  overflow: hidden;
+}
+#act3-sticky {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+#act3-bg {
+  position: absolute;
+  inset: 0;
+  background: var(--deep-space);
+}
+
+/* Nebula layers */
+.nebula-layer {
+  position: absolute;
+  inset: -20%;
+  opacity: 0.12;
+  border-radius: 50%;
+  pointer-events: none;
+}
+#nebula1 {
+  background: radial-gradient(ellipse at 30% 40%, #2d1b4e 0%, transparent 60%);
+  animation: nebulaDrift1 20s ease-in-out infinite alternate;
+}
+#nebula2 {
+  background: radial-gradient(ellipse at 70% 60%, #0a1628 0%, transparent 55%);
+  animation: nebulaDrift2 25s ease-in-out infinite alternate;
+}
+#nebula3 {
+  background: radial-gradient(ellipse at 50% 20%, #1a0d2e 0%, transparent 50%);
+  animation: nebulaDrift3 18s ease-in-out infinite alternate;
+}
+
+/* Asteroid belt */
+.asteroid {
+  position: absolute;
+  border-radius: 50%;
+  background: #3a3020;
+  opacity: 0;
+  animation: asteroidFloat var(--dur, 8s) var(--delay, 0s) ease-in-out infinite alternate;
+}
+
+/* Narrative cards */
+.travel-card {
+  position: absolute;
+  opacity: 0;
+  transform: translateX(-80px);
+  max-width: min(380px, 85vw);
+  z-index: 10;
+}
+.travel-card.from-right { transform: translateX(80px); }
+.travel-card-inner {
+  border: 1px solid rgba(0, 212, 255, 0.15);
+  padding: 28px 32px;
+  background: rgba(2, 4, 8, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  position: relative;
+  overflow: hidden;
+}
+.travel-card-inner::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 3px; height: 100%;
+  background: linear-gradient(to bottom, var(--accent-cyan), transparent);
+}
+.card-stat {
+  font-family: 'Bebas Neue', cursive;
+  font-size: clamp(36px, 6vw, 56px);
+  color: #fff;
+  line-height: 1;
+  letter-spacing: 0.05em;
+}
+.card-stat-unit {
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  color: var(--accent-cyan);
+  letter-spacing: 0.3em;
+  margin-top: 4px;
+  text-transform: uppercase;
+}
+.card-desc {
+  font-family: 'Syne', sans-serif;
+  font-size: 13px;
+  color: var(--text-dim);
+  margin-top: 10px;
+  line-height: 1.7;
+}
+
+/* SVG trajectory line */
+#trajectory-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* Planets */
+#earth-receding {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, #3b8bd4 0%, #1e6bb8 40%, #0a3a6e 70%, #041828 100%);
+  box-shadow: 0 0 20px rgba(59,139,212,0.4);
+  opacity: 0;
+  pointer-events: none;
+}
+#mars-approaching {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle at 38% 32%, #e8621a 0%, #c1440e 45%, #6b2008 75%, #2a0c03 100%);
+  box-shadow: 0 0 20px rgba(193,68,14,0.4);
+  pointer-events: none;
+}
+
+/* Probe button */
+#probe-btn {
+  position: absolute;
+  bottom: 40px;
+  right: 40px;
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: var(--accent-cyan);
+  border: 1px solid rgba(0,212,255,0.3);
+  padding: 12px 20px;
+  background: rgba(0,212,255,0.05);
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: all .2s;
+  z-index: 20;
+  opacity: 0;
+}
+#probe-btn:hover {
+  background: rgba(0,212,255,0.12);
+  border-color: rgba(0,212,255,0.6);
+}
+
+/* Satellite */
+#satellite {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 30;
+  font-size: 20px;
+  filter: drop-shadow(0 0 6px var(--accent-cyan));
+}
+
+/* Act 3 title */
+#act3-title {
+  position: absolute;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'Bebas Neue', cursive;
+  font-size: clamp(36px, 6vw, 64px);
+  letter-spacing: 0.2em;
+  color: rgba(255,255,255,0.07);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+/* ── ACT 4: LANDING ── */
+#act4 {
+  height: 350vh;
+  position: relative;
+}
+#act4-sticky {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Mars planet grow */
+#mars-planet {
+  position: absolute;
+  border-radius: 50%;
+  width: 60px; height: 60px;
+  background: radial-gradient(circle at 38% 32%,
+    #e8aa6a 0%, #d4875a 15%,
+    #c1440e 35%, #8b2e08 60%,
+    #4a1503 80%, #1a0500 100%);
+  box-shadow:
+    0 0 40px rgba(193,68,14,0.5),
+    0 0 100px rgba(193,68,14,0.2);
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  transition: box-shadow .3s;
+  overflow: hidden;
+}
+/* Mars craters */
+#mars-planet::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 30% 60%, rgba(0,0,0,0.3) 0%, transparent 15%),
+    radial-gradient(circle at 65% 30%, rgba(0,0,0,0.2) 0%, transparent 10%),
+    radial-gradient(circle at 75% 70%, rgba(0,0,0,0.25) 0%, transparent 12%),
+    radial-gradient(circle at 20% 25%, rgba(255,200,150,0.15) 0%, transparent 8%);
+}
+/* Atmosphere glow */
+#mars-atmo {
+  position: absolute;
+  border-radius: 50%;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  opacity: 0;
+}
+
+/* Parachute */
+#parachute-group {
+  position: absolute;
+  top: -200px;
+  left: 50%;
+  transform: translateX(-50%);
+  opacity: 0;
+  z-index: 20;
+}
+#parachute-svg { display: block; }
+
+/* Dust cloud */
+.dust-particle {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(212, 135, 90, 0.4);
+  pointer-events: none;
+  opacity: 0;
+}
+
+/* Landing HUD */
+#landing-hud {
+  position: absolute;
+  right: 40px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: 'Space Mono', monospace;
+  font-size: clamp(9px, 1.2vw, 11px);
+  color: var(--mars-orange);
+  line-height: 2.2;
+  letter-spacing: 0.05em;
+  opacity: 0;
+  z-index: 20;
+  text-align: right;
+}
+#landing-hud .h-label { color: var(--text-dim); }
+
+#act4-title {
+  position: absolute;
+  top: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'Bebas Neue', cursive;
+  font-size: clamp(40px, 8vw, 80px);
+  letter-spacing: 0.15em;
+  color: rgba(232,98,26,0);
+  z-index: 20;
+  white-space: nowrap;
+  text-shadow: 0 0 40px rgba(232,98,26,0);
+}
+
+/* Screen shake */
+@keyframes shake {
+  0%,100% { transform: translate(0, 0); }
+  10% { transform: translate(-4px, 2px); }
+  20% { transform: translate(4px, -3px); }
+  30% { transform: translate(-3px, 4px); }
+  40% { transform: translate(3px, -2px); }
+  50% { transform: translate(-2px, 3px); }
+  60% { transform: translate(2px, -4px); }
+  70% { transform: translate(-4px, 2px); }
+  80% { transform: translate(3px, 3px); }
+  90% { transform: translate(-2px, -2px); }
+}
+.shaking { animation: shake 0.5s ease-in-out; }
+
+/* ── ACT 5: SURFACE ── */
+#act5 {
+  min-height: 100vh;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Mars sky */
+#mars-sky {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom,
+    #3d1a08 0%,
+    #6b2e0c 20%,
+    #c1580e 45%,
+    #d4875a 65%,
+    #b06040 80%,
+    #8b4020 100%);
+}
+/* Sun */
+#mars-sun {
+  position: absolute;
+  top: 12%;
+  right: 20%;
+  width: clamp(30px, 4vw, 50px);
+  height: clamp(30px, 4vw, 50px);
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff8e0, #ffe066);
+  box-shadow: 0 0 30px rgba(255,224,102,0.6), 0 0 60px rgba(255,200,80,0.3);
+  animation: sunPulse 4s ease-in-out infinite alternate;
+}
+/* Mars ground */
+#mars-ground {
+  position: absolute;
+  bottom: 0;
+  left: 0; right: 0;
+  height: 45%;
+  background: linear-gradient(to bottom,
+    #8b4020 0%,
+    #7a3518 30%,
+    #6b2e12 60%,
+    #5a2510 100%);
+  border-radius: 50% 50% 0 0 / 4% 4% 0 0;
+}
+/* Ground texture */
+#mars-ground::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 15% 40%, rgba(0,0,0,0.2) 0%, transparent 8%),
+    radial-gradient(circle at 45% 60%, rgba(0,0,0,0.15) 0%, transparent 5%),
+    radial-gradient(circle at 70% 35%, rgba(0,0,0,0.2) 0%, transparent 7%),
+    radial-gradient(circle at 85% 55%, rgba(0,0,0,0.15) 0%, transparent 6%),
+    radial-gradient(circle at 30% 75%, rgba(0,0,0,0.1) 0%, transparent 4%);
+  border-radius: inherit;
+}
+/* Moons */
+.mars-moon {
+  position: absolute;
+  border-radius: 50%;
+  opacity: 0.7;
+}
+#phobos {
+  width: 10px; height: 8px;
+  background: radial-gradient(circle at 40% 35%, #aaa, #555);
+  top: 18%; left: 15%;
+  animation: moonOrbit1 20s linear infinite;
+}
+#deimos {
+  width: 6px; height: 5px;
+  background: radial-gradient(circle at 40% 35%, #999, #444);
+  top: 22%; left: 75%;
+  animation: moonOrbit2 35s linear infinite;
+}
+
+/* Exploration cards */
+#exploration-cards {
+  position: absolute;
+  bottom: 46%;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: clamp(12px, 2vw, 24px);
+  z-index: 10;
+  flex-wrap: wrap;
+  justify-content: center;
+  padding: 0 16px;
+}
+.explore-card {
+  width: clamp(160px, 22vw, 220px);
+  height: clamp(140px, 18vw, 180px);
+  perspective: 800px;
+  cursor: pointer;
+  opacity: 0;
+  transform: translateY(30px);
+}
+.explore-card-inner {
+  width: 100%; height: 100%;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform .6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.explore-card:hover .explore-card-inner { transform: rotateY(180deg); }
+.explore-front, .explore-back {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  border: 1px solid rgba(212, 135, 90, 0.25);
+  background: rgba(20, 8, 4, 0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.explore-back { transform: rotateY(180deg); justify-content: center; gap: 8px; }
+.explore-icon {
+  position: absolute;
+  top: 16px; right: 16px;
+  font-size: 22px;
+  opacity: 0.5;
+}
+.explore-name {
+  font-family: 'Bebas Neue', cursive;
+  font-size: clamp(18px, 2.5vw, 22px);
+  letter-spacing: 0.1em;
+  color: var(--mars-dust);
+}
+.explore-type {
+  font-family: 'Space Mono', monospace;
+  font-size: 9px;
+  color: var(--text-dim);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+.explore-fact {
+  font-family: 'Syne', sans-serif;
+  font-size: clamp(12px, 1.5vw, 13px);
+  color: var(--text-primary);
+  line-height: 1.6;
+}
+.explore-stat {
+  font-family: 'Space Mono', monospace;
+  font-size: clamp(9px, 1.1vw, 11px);
+  color: var(--mars-orange);
+  letter-spacing: 0.1em;
+}
+
+/* Rover */
+#rover-track {
+  position: absolute;
+  bottom: 57%;
+  left: 0; right: 0;
+  height: 30px;
+  overflow: hidden;
+  z-index: 5;
+}
+#rover {
+  position: absolute;
+  bottom: 0;
+  left: -120px;
+  animation: roverDrive 18s linear infinite;
+}
+
+/* Flag */
+#flag-btn {
+  position: absolute;
+  bottom: 48%;
+  right: 40px;
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  color: var(--mars-dust);
+  border: 1px solid rgba(212, 135, 90, 0.35);
+  padding: 12px 18px;
+  background: rgba(20, 8, 4, 0.6);
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: all .2s;
+  z-index: 20;
+  opacity: 0;
+}
+#flag-btn:hover { background: rgba(212, 135, 90, 0.12); border-color: rgba(212,135,90,0.6); }
+
+#flag-planted {
+  position: absolute;
+  bottom: 58%;
+  right: 120px;
+  opacity: 0;
+  transform-origin: bottom center;
+  z-index: 15;
+}
+
+/* Closing text */
+#closing-text {
+  position: absolute;
+  bottom: 8%;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  max-width: min(600px, 85vw);
+  z-index: 20;
+  opacity: 0;
+}
+#closing-text blockquote {
+  font-family: 'Syne', sans-serif;
+  font-size: clamp(16px, 2.5vw, 22px);
+  font-style: italic;
+  font-weight: 400;
+  color: var(--text-primary);
+  line-height: 1.7;
+  margin-bottom: 20px;
+}
+#closing-text .met {
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  color: var(--accent-cyan);
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+}
+#share-btn {
+  display: inline-block;
+  margin-top: 24px;
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.25em;
+  color: var(--deep-space);
+  background: var(--accent-cyan);
+  padding: 14px 28px;
+  cursor: pointer;
+  text-transform: uppercase;
+  border: none;
+  transition: all .2s;
+  box-shadow: 0 0 20px rgba(0,212,255,0.3);
+}
+#share-btn:hover { background: #fff; box-shadow: 0 0 30px rgba(0,212,255,0.5); }
+
+/* Act 5 title */
+#act5-title {
+  position: absolute;
+  top: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'Bebas Neue', cursive;
+  font-size: clamp(36px, 7vw, 72px);
+  letter-spacing: 0.15em;
+  color: rgba(255, 255, 255, 0.85);
+  z-index: 20;
+  text-shadow: 0 2px 20px rgba(0,0,0,0.5);
+  white-space: nowrap;
+  opacity: 0;
+}
+
+/* ── KEYFRAMES ── */
+@keyframes fadeIn { to { opacity: 1; } }
+@keyframes blink { 50% { opacity: 0; } }
+@keyframes marsGlow {
+  from { text-shadow: 0 0 40px rgba(232,98,26,0.5), 0 0 100px rgba(193,68,14,0.25); }
+  to   { text-shadow: 0 0 70px rgba(232,98,26,0.8), 0 0 150px rgba(193,68,14,0.45); }
+}
+@keyframes scrollPulse {
+  0%,100% { opacity: 0.3; transform: scaleY(1); }
+  50%     { opacity: 1;   transform: scaleY(1.2); }
+}
+@keyframes flameFlicker {
+  0%,100% { transform: scaleX(1)   scaleY(1);   opacity: 0.9; }
+  25%     { transform: scaleX(1.1) scaleY(0.95); opacity: 1;   }
+  50%     { transform: scaleX(0.9) scaleY(1.1);  opacity: 0.85; }
+  75%     { transform: scaleX(1.05) scaleY(0.98); opacity: 1;  }
+}
+@keyframes flamePulse {
+  0%,100% { opacity: 0.6; transform: scaleY(1);   }
+  50%     { opacity: 1;   transform: scaleY(1.3); }
+}
+@keyframes exhaustSmoke {
+  0%   { transform: translateY(0)   scale(1);   opacity: 0.6; }
+  100% { transform: translateY(60px) scale(3);   opacity: 0;   }
+}
+@keyframes sparkle {
+  0%   { transform: translate(0,0) scale(1); opacity: 1; }
+  100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
+}
+@keyframes nebulaDrift1 {
+  from { transform: translate(-3%, -2%) rotate(-2deg); }
+  to   { transform: translate(3%, 2%)  rotate(2deg);  }
+}
+@keyframes nebulaDrift2 {
+  from { transform: translate(2%, -3%) rotate(1deg); }
+  to   { transform: translate(-2%, 3%) rotate(-1deg); }
+}
+@keyframes nebulaDrift3 {
+  from { transform: translate(-1%, 2%) rotate(-1deg); }
+  to   { transform: translate(1%, -2%) rotate(1deg); }
+}
+@keyframes asteroidFloat {
+  from { transform: translateY(0) rotate(0deg); }
+  to   { transform: translateY(-20px) rotate(180deg); }
+}
+@keyframes sunPulse {
+  from { box-shadow: 0 0 30px rgba(255,224,102,0.6), 0 0 60px rgba(255,200,80,0.3); }
+  to   { box-shadow: 0 0 50px rgba(255,224,102,0.9), 0 0 90px rgba(255,200,80,0.5); }
+}
+@keyframes moonOrbit1 {
+  from { transform: translate(0,0); }
+  25%  { transform: translate(15px, -5px); }
+  50%  { transform: translate(25px, 0); }
+  75%  { transform: translate(10px, 5px); }
+  to   { transform: translate(0,0); }
+}
+@keyframes moonOrbit2 {
+  from { transform: translate(0,0); }
+  25%  { transform: translate(-10px, 8px); }
+  50%  { transform: translate(-18px, 0); }
+  75%  { transform: translate(-8px, -8px); }
+  to   { transform: translate(0,0); }
+}
+@keyframes roverDrive {
+  from { left: -120px; }
+  to   { left: 110%; }
+}
+@keyframes flagWave {
+  0%,100% { transform: skewX(0deg); }
+  25% { transform: skewX(-3deg); }
+  75% { transform: skewX(3deg); }
+}
+@keyframes flagPlant {
+  0%   { transform: translateY(-40px) rotate(-15deg); opacity: 0; }
+  60%  { transform: translateY(5px) rotate(2deg); opacity: 1; }
+  80%  { transform: translateY(-3px) rotate(-1deg); opacity: 1; }
+  100% { transform: translateY(0) rotate(0deg); opacity: 1; }
+}
+@keyframes dustBurst {
+  0%   { transform: translate(var(--dx), var(--dy)) scale(1); opacity: 0.7; }
+  100% { transform: translate(calc(var(--dx) * 4), calc(var(--dy) * 4)) scale(0.2); opacity: 0; }
+}
+@keyframes satelliteShoot {
+  0%   { transform: translate(0, 0) rotate(30deg); opacity: 1; }
+  100% { transform: translate(120vw, -50vh) rotate(30deg); opacity: 0; }
+}
+@keyframes glitch1 {
+  0%,95%,100% { clip-path: none; transform: translate(0); }
+  96% { clip-path: inset(20% 0 60% 0); transform: translate(-4px, 2px); color: #00d4ff; }
+  97% { clip-path: inset(50% 0 20% 0); transform: translate(4px, -2px); color: #e8621a; }
+  98% { clip-path: none; transform: translate(2px, 0); }
+  99% { clip-path: inset(10% 0 80% 0); transform: translate(-2px, 0); }
+}
+@keyframes drawPath {
+  from { stroke-dashoffset: 1000; }
+  to   { stroke-dashoffset: 0; }
+}
+@keyframes ringProgress {
+  from { stroke-dashoffset: 283; }
+  to   { stroke-dashoffset: 0; }
+}
+@keyframes scanlines {
+  from { background-position: 0 0; }
+  to   { background-position: 0 4px; }
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 768px) {
+  #nav-acts { display: none; }
+  #hud { left: 16px; font-size: 9px; }
+  #landing-hud { right: 16px; font-size: 9px; }
+  #probe-btn { bottom: 20px; right: 16px; font-size: 9px; padding: 10px 14px; }
+  #flag-btn { right: 16px; font-size: 9px; padding: 10px 14px; }
+  .travel-card { max-width: 90vw; left: 50% !important; right: auto !important; transform: translateX(-50%) !important; }
+  #exploration-cards { gap: 10px; bottom: 44%; }
+  .explore-card { width: 140px; height: 130px; }
+}
+@media (max-width: 480px) {
+  .hero-title { letter-spacing: 0.02em; }
+  #act2-title, #act3-title, #act4-title, #act5-title { letter-spacing: 0.08em; }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  #act3 .nebula-layer { animation: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- CUSTOM CURSOR -->
+<div id="cursor"></div>
+<div id="cursor-dot"></div>
+
+<!-- LOADING -->
+<div id="loader">
+  <div id="loader-mission">MISSION: ARES-7 // YEAR 2047 // T-MINUS</div>
+  <div id="loader-countdown">3</div>
+  <div id="loader-bar-wrap"><div id="loader-bar"></div></div>
+  <div id="loader-status">INITIALIZING SYSTEMS</div>
+</div>
+
+<!-- PROGRESS -->
+<div id="progress-bar"></div>
+
+<!-- NAV -->
+<nav id="nav">
+  <div id="nav-logo">ARES-7</div>
+  <ul id="nav-acts">
+    <li onclick="scrollToAct(1)" data-act="1">THE CALL</li>
+    <li onclick="scrollToAct(2)" data-act="2">IGNITION</li>
+    <li onclick="scrollToAct(3)" data-act="3">THE VOID</li>
+    <li onclick="scrollToAct(4)" data-act="4">RED HORIZON</li>
+    <li onclick="scrollToAct(5)" data-act="5">NEW WORLD</li>
+  </ul>
+</nav>
+
+<!-- THREE.JS CANVAS -->
+<canvas id="space-canvas"></canvas>
+
+<!-- ━━━━ ACT 1: HERO ━━━━ -->
+<section id="act1">
+  <p class="hero-overline" id="hero-overline">
+    MISSION: ARES-7 &nbsp;//<span> _</span>&nbsp; YEAR 2047 &nbsp;//&nbsp; DESTINATION: MARS
+  </p>
+  <h1 class="hero-title" id="hero-title">MARS</h1>
+  <p class="hero-subtitle" id="hero-subtitle">A &nbsp;Journey &nbsp;Beyond</p>
+
+  <!-- Mini rocket on launchpad -->
+  <div id="hero-rocket-wrap">
+    <svg width="40" height="80" viewBox="0 0 40 80">
+      <!-- Rocket body -->
+      <ellipse cx="20" cy="30" rx="8" ry="22" fill="#dde6f0"/>
+      <polygon points="20,4 12,24 28,24" fill="#c8d4e0"/>
+      <!-- Window -->
+      <circle cx="20" cy="28" r="4" fill="#1a3a5c" stroke="#3a8bd4" stroke-width="1"/>
+      <circle cx="20" cy="28" r="2" fill="#00d4ff" opacity="0.5"/>
+      <!-- Fins -->
+      <polygon points="12,42 6,54 12,54" fill="#a0b0c0"/>
+      <polygon points="28,42 34,54 28,54" fill="#a0b0c0"/>
+      <!-- Nozzle -->
+      <rect x="16" y="50" width="8" height="6" fill="#708090" rx="1"/>
+      <!-- Flames -->
+      <g id="hero-flames">
+        <ellipse cx="20" cy="62" rx="4" ry="8" fill="#ffd23f" opacity="0.9" style="animation: flamePulse 0.4s ease-in-out infinite;"/>
+        <ellipse cx="20" cy="64" rx="2.5" ry="6" fill="#ff8c00" opacity="0.8" style="animation: flamePulse 0.5s ease-in-out infinite 0.1s;"/>
+        <ellipse cx="20" cy="66" rx="1.5" ry="4" fill="#fff" opacity="0.6" style="animation: flamePulse 0.3s ease-in-out infinite 0.05s;"/>
+      </g>
+    </svg>
+    <!-- Smoke particles -->
+    <div id="hero-smoke"></div>
+  </div>
+
+  <div class="scroll-hint">
+    <span>SCROLL TO LAUNCH</span>
+    <div class="scroll-arrow"></div>
+  </div>
+</section>
+
+<!-- ━━━━ ACT 2: LAUNCH ━━━━ -->
+<section id="act2">
+  <div id="act2-sticky">
+    <div id="launch-bg"></div>
+    <div id="earth-horizon"></div>
+    <div id="earth-glow"></div>
+    <div id="ground"></div>
+    <div id="launchpad"></div>
+    <div id="shockwave"></div>
+
+    <div id="hud">
+      <div><span class="hud-label">ALTITUDE &nbsp;</span><span class="hud-val" id="hud-alt">0000 KM</span></div>
+      <div><span class="hud-label">VELOCITY &nbsp;</span><span class="hud-val" id="hud-vel">00,000 KM/H</span></div>
+      <div><span class="hud-label">FUEL &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="hud-val" id="hud-fuel">100%</span></div>
+      <div><span class="hud-label">STATUS &nbsp;&nbsp;&nbsp;</span><span class="hud-val" id="hud-status">STANDBY</span></div>
+    </div>
+
+    <!-- Launch rocket (larger) -->
+    <div id="launch-rocket">
+      <svg id="launch-rocket-svg" width="70" height="140" viewBox="0 0 70 140">
+        <ellipse cx="35" cy="54" rx="14" ry="38" fill="#dde6f0"/>
+        <polygon points="35,6 21,40 49,40" fill="#c8d4e0"/>
+        <circle cx="35" cy="50" r="7" fill="#1a3a5c" stroke="#3a8bd4" stroke-width="1.5"/>
+        <circle cx="35" cy="50" r="3.5" fill="#00d4ff" opacity="0.5"/>
+        <!-- Details -->
+        <rect x="23" y="60" width="24" height="3" fill="#c8d4e0" opacity="0.5" rx="1"/>
+        <rect x="25" y="68" width="20" height="2" fill="#c8d4e0" opacity="0.3" rx="1"/>
+        <polygon points="21,74 9,100 21,100" fill="#a0b0c0"/>
+        <polygon points="49,74 61,100 49,100" fill="#a0b0c0"/>
+        <rect x="28" y="90" width="14" height="10" fill="#708090" rx="1.5"/>
+        <!-- Engine glow -->
+        <ellipse cx="35" cy="102" rx="8" ry="4" fill="#ffd23f" opacity="0.3"/>
+        <!-- Exhaust flames - animated -->
+        <g id="launch-flames" style="transform-origin: 35px 110px;">
+          <ellipse cx="35" cy="116" rx="7" ry="14" fill="url(#flameGrad1)" style="animation: flameFlicker 0.25s ease-in-out infinite;"/>
+          <ellipse cx="35" cy="120" rx="4.5" ry="10" fill="url(#flameGrad2)" style="animation: flameFlicker 0.3s ease-in-out infinite 0.05s;"/>
+          <ellipse cx="35" cy="124" rx="2.5" ry="7" fill="#fff" opacity="0.7" style="animation: flamePulse 0.2s ease-in-out infinite;"/>
+        </g>
+        <defs>
+          <radialGradient id="flameGrad1" cx="50%" cy="30%" r="60%">
+            <stop offset="0%" stop-color="#fff8e0"/>
+            <stop offset="30%" stop-color="#ffd23f"/>
+            <stop offset="70%" stop-color="#ff6600"/>
+            <stop offset="100%" stop-color="#c1440e" stop-opacity="0"/>
+          </radialGradient>
+          <radialGradient id="flameGrad2" cx="50%" cy="20%" r="60%">
+            <stop offset="0%" stop-color="#fff"/>
+            <stop offset="40%" stop-color="#ff8c00"/>
+            <stop offset="100%" stop-color="#e8621a" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+      </svg>
+    </div>
+
+    <div id="act2-title">IGNITION</div>
+    <div id="smoke-container" style="position:absolute;inset:0;pointer-events:none;z-index:3;overflow:hidden;"></div>
+  </div>
+</section>
+
+<!-- ━━━━ ACT 3: TRAVEL ━━━━ -->
+<section id="act3">
+  <div id="act3-sticky">
+    <div id="act3-bg">
+      <div class="nebula-layer" id="nebula1"></div>
+      <div class="nebula-layer" id="nebula2"></div>
+      <div class="nebula-layer" id="nebula3"></div>
+    </div>
+
+    <!-- SVG for trajectory line -->
+    <svg id="trajectory-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
+      <defs>
+        <marker id="traj-arrow" markerWidth="4" markerHeight="4" refX="2" refY="2" orient="auto">
+          <path d="M0,0 L4,2 L0,4 Z" fill="rgba(0,212,255,0.6)"/>
+        </marker>
+      </defs>
+      <path id="traj-path"
+        d="M 10,85 C 20,70 50,30 90,15"
+        fill="none"
+        stroke="rgba(0,212,255,0.3)"
+        stroke-width="0.3"
+        stroke-dasharray="2 2"
+        stroke-dashoffset="1000"
+        vector-effect="non-scaling-stroke"
+        style="stroke-dasharray: 1000; stroke-dashoffset: 1000;"/>
+    </svg>
+
+    <!-- Planets -->
+    <div id="earth-receding" style="width:60px;height:60px;top:65%;left:8%;"></div>
+    <div id="mars-approaching" style="width:20px;height:20px;top:20%;right:12%;"></div>
+
+    <!-- Narrative Cards -->
+    <div class="travel-card" id="card1" style="left: 8%; top: 15%;">
+      <div class="travel-card-inner">
+        <div class="card-stat">54.6M</div>
+        <div class="card-stat-unit">Kilometers to Mars</div>
+        <p class="card-desc">The minimum distance between Earth and Mars — achieved only during opposition, once every 26 months.</p>
+      </div>
+    </div>
+
+    <div class="travel-card from-right" id="card2" style="right: 8%; top: 35%;">
+      <div class="travel-card-inner" style="--accent: var(--mars-orange)">
+        <div style="position:relative;width:80px;height:80px;margin-bottom:12px;">
+          <svg width="80" height="80" viewBox="0 0 80 80">
+            <circle cx="40" cy="40" r="35" fill="none" stroke="rgba(232,98,26,0.15)" stroke-width="4"/>
+            <circle id="progress-ring" cx="40" cy="40" r="35" fill="none" stroke="var(--mars-orange)"
+              stroke-width="4" stroke-linecap="round"
+              stroke-dasharray="220" stroke-dashoffset="220"
+              transform="rotate(-90 40 40)"/>
+          </svg>
+          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;">
+            <span style="font-family:'Bebas Neue',cursive;font-size:22px;line-height:1;">7</span>
+            <span style="font-family:'Space Mono',monospace;font-size:8px;color:var(--text-dim);">MONTHS</span>
+          </div>
+        </div>
+        <div class="card-stat-unit" style="color:var(--mars-orange);">Transit Duration</div>
+        <p class="card-desc">Seven months of silent travel through interplanetary space aboard the Ares-7 crew capsule.</p>
+      </div>
+    </div>
+
+    <div class="travel-card" id="card3" style="left: 8%; bottom: 15%;">
+      <div class="travel-card-inner">
+        <div style="display:flex;align-items:flex-end;gap:8px;margin-bottom:8px;">
+          <!-- Thermometer SVG -->
+          <svg width="24" height="70" viewBox="0 0 24 70" style="flex-shrink:0;">
+            <rect x="9" y="4" width="6" height="44" rx="3" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.2)" stroke-width="0.5"/>
+            <rect id="thermo-fill" x="10" y="28" width="4" height="20" rx="1.5" fill="#3b8bd4"/>
+            <circle cx="12" cy="52" r="6" fill="#3b8bd4"/>
+            <circle cx="12" cy="52" r="3.5" fill="#5aa8f0"/>
+          </svg>
+          <div>
+            <div class="card-stat" style="color:#5aa8f0;">-63°C</div>
+            <div class="card-stat-unit" style="color:#5aa8f0;">Average Temperature</div>
+          </div>
+        </div>
+        <p class="card-desc">Mars averages -63°C — ranging from -125°C at the poles in winter to a relatively balmy 20°C at the equator in summer.</p>
+      </div>
+    </div>
+
+    <!-- Probe button -->
+    <button id="probe-btn" onclick="releaseProbe()">[ RELEASE PROBE ]</button>
+    <!-- Satellite element -->
+    <div id="satellite">
+      <svg width="40" height="30" viewBox="0 0 40 30">
+        <rect x="14" y="11" width="12" height="8" fill="#c8d4e0" rx="1"/>
+        <rect x="2" y="13" width="12" height="4" fill="#3b8bd4"/>
+        <rect x="26" y="13" width="12" height="4" fill="#3b8bd4"/>
+        <circle cx="20" cy="15" r="2" fill="#ffd23f"/>
+        <line x1="20" y1="10" x2="20" y2="7" stroke="#aaa" stroke-width="0.8"/>
+        <circle cx="20" cy="6" r="2" fill="#aaa"/>
+      </svg>
+    </div>
+
+    <div id="act3-title">THE VOID</div>
+  </div>
+</section>
+
+<!-- ━━━━ ACT 4: LANDING ━━━━ -->
+<section id="act4">
+  <div id="act4-sticky">
+    <!-- Mars growing -->
+    <div id="mars-planet"></div>
+    <div id="mars-atmo"></div>
+
+    <!-- Parachute + lander -->
+    <div id="parachute-group">
+      <svg id="parachute-svg" width="120" height="180" viewBox="0 0 120 180">
+        <!-- Chute canopy -->
+        <path d="M10,60 Q60,0 110,60" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="1.5"/>
+        <path d="M10,60 Q30,20 60,15 Q90,20 110,60" fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+        <!-- Chute segments -->
+        <path d="M60,15 L60,100" stroke="rgba(255,255,255,0.2)" stroke-width="0.5"/>
+        <path d="M35,55 L50,100" stroke="rgba(255,255,255,0.15)" stroke-width="0.5"/>
+        <path d="M85,55 L70,100" stroke="rgba(255,255,255,0.15)" stroke-width="0.5"/>
+        <!-- Risers -->
+        <line x1="30" y1="62" x2="50" y2="100" stroke="rgba(255,255,255,0.3)" stroke-width="0.7"/>
+        <line x1="60" y1="60" x2="60" y2="100" stroke="rgba(255,255,255,0.3)" stroke-width="0.7"/>
+        <line x1="90" y1="62" x2="70" y2="100" stroke="rgba(255,255,255,0.3)" stroke-width="0.7"/>
+        <!-- Lander box -->
+        <rect x="44" y="100" width="32" height="20" fill="#b0b8c4" rx="2"/>
+        <rect x="40" y="116" width="40" height="6" fill="#8090a0" rx="1"/>
+        <!-- Legs -->
+        <line x1="44" y1="122" x2="36" y2="136" stroke="#708090" stroke-width="2"/>
+        <line x1="76" y1="122" x2="84" y2="136" stroke="#708090" stroke-width="2"/>
+        <line x1="36" y1="136" x2="32" y2="136" stroke="#708090" stroke-width="2"/>
+        <line x1="84" y1="136" x2="88" y2="136" stroke="#708090" stroke-width="2"/>
+        <!-- Engine glow -->
+        <ellipse cx="60" cy="124" rx="6" ry="3" fill="#ff8c00" opacity="0.4"/>
+      </svg>
+    </div>
+
+    <!-- Dust particles container -->
+    <div id="dust-container" style="position:absolute;inset:0;pointer-events:none;z-index:15;overflow:hidden;"></div>
+
+    <!-- Landing HUD -->
+    <div id="landing-hud">
+      <div><span class="h-label">ALTITUDE &nbsp;</span><span id="land-alt">10 KM</span></div>
+      <div><span class="h-label">DESCENT RATE </span><span id="land-rate">85 M/S</span></div>
+      <div><span class="h-label">SITE &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span>JEZERO</span></div>
+      <div><span class="h-label">SURFACE TEMP </span><span>-40°C</span></div>
+      <div><span class="h-label">STATUS &nbsp;&nbsp;&nbsp;&nbsp;</span><span id="land-status">ENTRY</span></div>
+    </div>
+
+    <div id="act4-title">RED HORIZON</div>
+  </div>
+</section>
+
+<!-- ━━━━ ACT 5: SURFACE ━━━━ -->
+<section id="act5">
+  <div id="mars-sky"></div>
+  <div id="mars-sun"></div>
+
+  <!-- Moons -->
+  <div class="mars-moon" id="phobos"></div>
+  <div class="mars-moon" id="deimos"></div>
+
+  <!-- Ground -->
+  <div id="mars-ground"></div>
+
+  <!-- Act title -->
+  <div id="act5-title">A NEW WORLD</div>
+
+  <!-- Exploration cards -->
+  <div id="exploration-cards">
+    <div class="explore-card" id="ecard1">
+      <div class="explore-card-inner">
+        <div class="explore-front">
+          <div class="explore-icon">🔴</div>
+          <div class="explore-name">JEZERO CRATER</div>
+          <div class="explore-type">Ancient lake bed</div>
+        </div>
+        <div class="explore-back">
+          <div class="explore-fact">Billions of years ago, this was a lake fed by river delta. Today it's our best chance to find evidence of ancient Martian life.</div>
+          <div class="explore-stat">DIAMETER: 49 KM // DEPTH: 500 M</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="explore-card" id="ecard2">
+      <div class="explore-card-inner">
+        <div class="explore-front">
+          <div class="explore-icon">🟠</div>
+          <div class="explore-name">OLYMPUS MONS</div>
+          <div class="explore-type">Largest volcano</div>
+        </div>
+        <div class="explore-back">
+          <div class="explore-fact">The largest volcano in the solar system — three times the height of Everest. So wide its base would cover France.</div>
+          <div class="explore-stat">HEIGHT: 21 KM // WIDTH: 600 KM</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="explore-card" id="ecard3">
+      <div class="explore-card-inner">
+        <div class="explore-front">
+          <div class="explore-icon">🟡</div>
+          <div class="explore-name">VALLES MARINERIS</div>
+          <div class="explore-type">Grand canyon of Mars</div>
+        </div>
+        <div class="explore-back">
+          <div class="explore-fact">A canyon system 10 times longer and 5 times deeper than Earth's Grand Canyon. Stretches across a fifth of Mars.</div>
+          <div class="explore-stat">LENGTH: 4,000 KM // DEPTH: 7 KM</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rover track -->
+  <div id="rover-track">
+    <div id="rover">
+      <svg width="100" height="30" viewBox="0 0 100 30">
+        <!-- Body -->
+        <rect x="20" y="4" width="60" height="18" fill="#8090a0" rx="3"/>
+        <!-- Mast -->
+        <rect x="70" y="0" width="3" height="10" fill="#607080"/>
+        <circle cx="71.5" cy="0" r="3" fill="#506070"/>
+        <!-- Solar panels -->
+        <rect x="8" y="6" width="16" height="10" fill="#3b8bd4" opacity="0.8"/>
+        <rect x="76" y="6" width="16" height="10" fill="#3b8bd4" opacity="0.8"/>
+        <!-- Wheels -->
+        <circle cx="28" cy="22" r="6" fill="#404848" stroke="#606868" stroke-width="1"/>
+        <circle cx="50" cy="24" r="5" fill="#404848" stroke="#606868" stroke-width="1"/>
+        <circle cx="72" cy="22" r="6" fill="#404848" stroke="#606868" stroke-width="1"/>
+        <!-- Wheel spokes -->
+        <line x1="28" y1="16" x2="28" y2="28" stroke="#606868" stroke-width="1"/>
+        <line x1="22" y1="22" x2="34" y2="22" stroke="#606868" stroke-width="1"/>
+        <line x1="50" y1="19" x2="50" y2="29" stroke="#606868" stroke-width="0.8"/>
+        <line x1="45" y1="24" x2="55" y2="24" stroke="#606868" stroke-width="0.8"/>
+        <line x1="72" y1="16" x2="72" y2="28" stroke="#606868" stroke-width="1"/>
+        <line x1="66" y1="22" x2="78" y2="22" stroke="#606868" stroke-width="1"/>
+        <!-- Instrument arm -->
+        <line x1="22" y1="13" x2="10" y2="16" stroke="#708090" stroke-width="1.5"/>
+        <circle cx="9" cy="16" r="2.5" fill="#607080"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- Flag -->
+  <button id="flag-btn" onclick="plantFlag()">[ PLANT THE FLAG ]</button>
+  <div id="flag-planted">
+    <svg width="60" height="90" viewBox="0 0 60 90">
+      <!-- Pole -->
+      <line x1="10" y1="5" x2="10" y2="88" stroke="#c0c8d0" stroke-width="2"/>
+      <!-- Flag background -->
+      <rect x="12" y="5" width="38" height="26" fill="#f4892f"/>
+      <!-- Ashoka Chakra (simplified) -->
+      <circle cx="31" cy="18" r="8" fill="none" stroke="#1a4fa0" stroke-width="1.5"/>
+      <circle cx="31" cy="18" r="2" fill="#1a4fa0"/>
+      <!-- Spokes -->
+      <g stroke="#1a4fa0" stroke-width="0.6">
+        <line x1="31" y1="10" x2="31" y2="26"/>
+        <line x1="23" y1="18" x2="39" y2="18"/>
+        <line x1="25.3" y1="12.3" x2="36.7" y2="23.7"/>
+        <line x1="36.7" y1="12.3" x2="25.3" y2="23.7"/>
+        <line x1="31" y1="10" x2="31" y2="26" transform="rotate(22.5 31 18)"/>
+        <line x1="23" y1="18" x2="39" y2="18" transform="rotate(22.5 31 18)"/>
+        <line x1="25.3" y1="12.3" x2="36.7" y2="23.7" transform="rotate(22.5 31 18)"/>
+        <line x1="36.7" y1="12.3" x2="25.3" y2="23.7" transform="rotate(22.5 31 18)"/>
+      </g>
+      <!-- Green stripe bottom -->
+      <rect id="flag-wave" x="12" y="30" width="38" height="1" fill="#1a8a4a"/>
+      <!-- Flag wave anim -->
+    </svg>
+  </div>
+
+  <!-- Closing narrative -->
+  <div id="closing-text">
+    <blockquote>
+      "Humanity did not stop at the stars it was born under.<br>
+      We reached for the red light in the sky.<br>
+      And made it home."
+    </blockquote>
+    <p class="met">MISSION ELAPSED TIME: 7 MONTHS · 3 DAYS · 14 HOURS</p>
+    <button id="share-btn" onclick="shareJourney()">SHARE YOUR JOURNEY →</button>
+  </div>
+</section>
+
+<script>
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// GSAP REGISTER
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+gsap.registerPlugin(ScrollTrigger);
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// CURSOR
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function initCursor() {
+  const cursor = document.getElementById('cursor');
+  const dot = document.getElementById('cursor-dot');
+  let mx = -100, my = -100, cx = -100, cy = -100;
+
+  document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+
+  function animate() {
+    cx += (mx - cx) * 0.12;
+    cy += (my - cy) * 0.12;
+    cursor.style.left = cx + 'px';
+    cursor.style.top  = cy + 'px';
+    dot.style.left = mx + 'px';
+    dot.style.top  = my + 'px';
+    requestAnimationFrame(animate);
+  }
+  animate();
+
+  // Color per section
+  const sectionColors = {
+    act1: '#00d4ff', act2: '#ffd23f',
+    act3: '#00d4ff', act4: '#e8621a', act5: '#d4875a'
+  };
+  document.querySelectorAll('section').forEach(s => {
+    s.addEventListener('mouseenter', () => {
+      const c = sectionColors[s.id] || '#00d4ff';
+      cursor.style.borderColor = c;
+      dot.style.background = c;
+    });
+  });
+
+  // Hover expand
+  document.querySelectorAll('button, .explore-card, li, a').forEach(el => {
+    el.addEventListener('mouseenter', () => {
+      cursor.style.width = '40px'; cursor.style.height = '40px';
+      cursor.style.background = 'rgba(0,212,255,0.1)';
+    });
+    el.addEventListener('mouseleave', () => {
+      cursor.style.width = '20px'; cursor.style.height = '20px';
+      cursor.style.background = 'transparent';
+    });
+  });
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// THREE.JS STARFIELD
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function initStarfield() {
+  const canvas = document.getElementById('space-canvas');
+  const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: false });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+  renderer.setSize(window.innerWidth, window.innerHeight);
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+  camera.position.z = 5;
+
+  // Star particles
+  const isMobile = window.innerWidth < 768;
+  const starCount = isMobile ? 2000 : 5000;
+  const positions = new Float32Array(starCount * 3);
+  const sizes = new Float32Array(starCount);
+
+  for (let i = 0; i < starCount; i++) {
+    positions[i * 3]     = (Math.random() - 0.5) * 200;
+    positions[i * 3 + 1] = (Math.random() - 0.5) * 200;
+    positions[i * 3 + 2] = (Math.random() - 0.5) * 200;
+    sizes[i] = Math.random() * 2 + 0.5;
+  }
+
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geo.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+
+  const mat = new THREE.PointsMaterial({
+    color: 0xe8f4fd,
+    size: 0.08,
+    sizeAttenuation: true,
+    transparent: true,
+    opacity: 0.8,
+  });
+
+  const stars = new THREE.Points(geo, mat);
+  scene.add(stars);
+
+  let scrollY = 0;
+  let targetSpeed = 0;
+  let currentSpeed = 0;
+
+  window.addEventListener('scroll', () => { scrollY = window.scrollY; });
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+
+  function tick() {
+    requestAnimationFrame(tick);
+    const scrollProgress = scrollY / (document.body.scrollHeight - window.innerHeight);
+    targetSpeed = 0.0003 + scrollProgress * 0.006;
+    currentSpeed += (targetSpeed - currentSpeed) * 0.05;
+
+    stars.rotation.z += currentSpeed * 0.3;
+    camera.position.z = 5 - scrollProgress * 3;
+
+    // Warp: move stars toward viewer on high scroll
+    if (scrollProgress > 0.3) {
+      const warp = (scrollProgress - 0.3) * 0.02;
+      stars.position.z += warp;
+      if (stars.position.z > 10) stars.position.z = 0;
+    }
+
+    renderer.render(scene, camera);
+  }
+  tick();
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// LOADING ANIMATION
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function initLoader() {
+  const loader = document.getElementById('loader');
+  const cd = document.getElementById('loader-countdown');
+  const bar = document.getElementById('loader-bar');
+  const status = document.getElementById('loader-status');
+  const statuses = ['INITIALIZING SYSTEMS', 'FUEL LOADING: 100%', 'GYROSCOPE ONLINE', 'CREW ABOARD', 'ALL SYSTEMS GO'];
+
+  let progress = 0;
+  let countdown = 3;
+
+  const interval = setInterval(() => {
+    progress += 2;
+    bar.style.width = progress + '%';
+
+    const si = Math.floor((progress / 100) * statuses.length);
+    status.textContent = statuses[Math.min(si, statuses.length - 1)];
+
+    if (progress >= 33 && countdown === 3) { countdown = 2; cd.textContent = '2'; }
+    if (progress >= 66 && countdown === 2) { countdown = 1; cd.textContent = '1'; }
+    if (progress >= 95 && countdown === 1) { countdown = 0; cd.textContent = 'LAUNCH'; }
+
+    if (progress >= 100) {
+      clearInterval(interval);
+      setTimeout(() => {
+        gsap.to(loader, { opacity: 0, duration: 0.8, onComplete: () => { loader.style.display = 'none'; } });
+        document.getElementById('nav').classList.add('visible');
+        revealHero();
+      }, 400);
+    }
+  }, 30);
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// HERO REVEAL
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function revealHero() {
+  const tl = gsap.timeline();
+  tl.to('#hero-overline', { opacity: 1, duration: 0.6, ease: 'power2.out' })
+    .to('#hero-title', { opacity: 1, duration: 0.8, ease: 'power3.out' }, '-=0.2')
+    .to('#hero-subtitle', { opacity: 1, duration: 0.6, ease: 'power2.out' }, '-=0.4')
+    .to('#hero-rocket-wrap', { opacity: 1, y: 0, duration: 0.6, ease: 'back.out(1.4)' }, '-=0.2');
+
+  // Glitch effect on title
+  const title = document.getElementById('hero-title');
+  title.style.animation = 'marsGlow 3s ease-in-out infinite alternate, glitch1 8s ease-in-out infinite 4s';
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// SCROLL ANIMATIONS
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function initScrollAnimations() {
+
+  // ── PROGRESS BAR ──
+  gsap.to('#progress-bar', {
+    width: '100%',
+    ease: 'none',
+    scrollTrigger: { trigger: 'body', start: 'top top', end: 'bottom bottom', scrub: 0.3 }
+  });
+
+  // ── ACT 1 HERO PARALLAX ──
+  gsap.to('#act1', {
+    scale: 1.08,
+    ease: 'none',
+    scrollTrigger: { trigger: '#act1', start: 'top top', end: 'bottom top', scrub: true }
+  });
+  gsap.to('#hero-title', {
+    y: -80, opacity: 0,
+    ease: 'none',
+    scrollTrigger: { trigger: '#act1', start: '30% top', end: 'bottom top', scrub: true }
+  });
+
+  // ── ACT 2: LAUNCH PIN ──
+  const act2Pin = ScrollTrigger.create({
+    trigger: '#act2',
+    start: 'top top',
+    end: 'bottom bottom',
+    pin: '#act2-sticky',
+    anticipatePin: 1
+  });
+
+  // Rocket launch scrub
+  gsap.to('#launch-rocket', {
+    y: -(window.innerHeight * 1.2),
+    ease: 'power1.in',
+    scrollTrigger: {
+      trigger: '#act2',
+      start: 'top top',
+      end: 'bottom bottom',
+      scrub: 1.5
+    }
+  });
+
+  // Ground fade
+  gsap.to('#ground', {
+    opacity: 0,
+    scrollTrigger: { trigger: '#act2', start: '20% top', end: '50% top', scrub: true }
+  });
+  gsap.to('#launchpad', {
+    opacity: 0,
+    scrollTrigger: { trigger: '#act2', start: '15% top', end: '40% top', scrub: true }
+  });
+
+  // Earth horizon appear then fade
+  gsap.fromTo('#earth-horizon', { opacity: 0 }, {
+    opacity: 0.6,
+    scrollTrigger: { trigger: '#act2', start: '10% top', end: '35% top', scrub: true }
+  });
+  gsap.to('#earth-horizon', {
+    opacity: 0,
+    scrollTrigger: { trigger: '#act2', start: '50% top', end: '80% top', scrub: true }
+  });
+  gsap.fromTo('#earth-glow', { opacity: 0 }, {
+    opacity: 1,
+    scrollTrigger: { trigger: '#act2', start: '10% top', end: '30% top', scrub: true }
+  });
+  gsap.to('#earth-glow', {
+    opacity: 0,
+    scrollTrigger: { trigger: '#act2', start: '45% top', end: '70% top', scrub: true }
+  });
+
+  // Background color transition
+  ScrollTrigger.create({
+    trigger: '#act2',
+    start: 'top top',
+    end: 'bottom bottom',
+    scrub: true,
+    onUpdate: self => {
+      const p = self.progress;
+      document.getElementById('launch-bg').style.opacity = Math.min(p * 3, 0.8);
+    }
+  });
+
+  // HUD show/hide
+  gsap.to('#hud', {
+    opacity: 1,
+    scrollTrigger: { trigger: '#act2', start: '5% top', end: '20% top', scrub: true }
+  });
+
+  // HUD data counters
+  ScrollTrigger.create({
+    trigger: '#act2',
+    start: 'top top',
+    end: 'bottom bottom',
+    scrub: true,
+    onUpdate: self => {
+      const p = self.progress;
+      document.getElementById('hud-alt').textContent = Math.round(p * 400).toString().padStart(4,'0') + ' KM';
+      document.getElementById('hud-vel').textContent = Math.round(p * 28000).toLocaleString() + ' KM/H';
+      document.getElementById('hud-fuel').textContent = Math.round(100 - p * 88) + '%';
+      const statuses = ['STANDBY','IGNITION','NOMINAL','NOMINAL','ORBITAL'];
+      document.getElementById('hud-status').textContent = statuses[Math.min(Math.floor(p * 5), 4)];
+    }
+  });
+
+  // Act 2 title
+  gsap.to('#act2-title', {
+    color: 'rgba(255,255,255,0.9)',
+    textShadow: '0 0 30px rgba(255,210,63,0.5)',
+    scrollTrigger: { trigger: '#act2', start: '5% top', end: '20% top', scrub: true }
+  });
+
+  // Shockwave at ignition
+  ScrollTrigger.create({
+    trigger: '#act2',
+    start: '8% top',
+    onEnter: () => triggerShockwave()
+  });
+
+  // Smoke particles periodic
+  ScrollTrigger.create({
+    trigger: '#act2',
+    start: 'top top',
+    end: 'bottom bottom',
+    onUpdate: self => {
+      if (self.progress > 0.05 && self.progress < 0.7 && Math.random() < 0.08) {
+        spawnSmoke();
+      }
+    }
+  });
+
+  // ── ACT 3: TRAVEL PIN ──
+  ScrollTrigger.create({
+    trigger: '#act3',
+    start: 'top top',
+    end: 'bottom bottom',
+    pin: '#act3-sticky',
+    anticipatePin: 1
+  });
+
+  // Card reveals
+  gsap.to('#card1', {
+    opacity: 1, x: 0,
+    scrollTrigger: { trigger: '#act3', start: '5% top', end: '25% top', scrub: true }
+  });
+  gsap.to('#card2', {
+    opacity: 1, x: 0,
+    scrollTrigger: { trigger: '#act3', start: '30% top', end: '50% top', scrub: true }
+  });
+  gsap.to('#card3', {
+    opacity: 1, x: 0,
+    scrollTrigger: { trigger: '#act3', start: '55% top', end: '75% top', scrub: true }
+  });
+
+  // Trajectory line draw
+  ScrollTrigger.create({
+    trigger: '#act3',
+    start: '20% top',
+    end: '60% top',
+    scrub: true,
+    onUpdate: self => {
+      const path = document.getElementById('traj-path');
+      const offset = 1000 - (self.progress * 1000);
+      path.style.strokeDashoffset = offset;
+    }
+  });
+
+  // Progress ring
+  ScrollTrigger.create({
+    trigger: '#act3',
+    start: '30% top',
+    end: '55% top',
+    scrub: true,
+    onUpdate: self => {
+      const ring = document.getElementById('progress-ring');
+      ring.setAttribute('stroke-dashoffset', 220 - self.progress * 220);
+    }
+  });
+
+  // Planets
+  gsap.fromTo('#earth-receding', { opacity: 0.8, scale: 1 }, {
+    opacity: 0, scale: 0.2,
+    scrollTrigger: { trigger: '#act3', start: '10% top', end: '60% top', scrub: true }
+  });
+  gsap.fromTo('#mars-approaching', { width: '20px', height: '20px' }, {
+    width: '60px', height: '60px',
+    scrollTrigger: { trigger: '#act3', start: '30% top', end: '90% top', scrub: true }
+  });
+
+  // Probe button appear
+  gsap.to('#probe-btn', {
+    opacity: 1,
+    scrollTrigger: { trigger: '#act3', start: '40% top', end: '55% top', scrub: true }
+  });
+
+  // Act 3 asteroids
+  spawnAsteroids();
+
+  // ── ACT 4: LANDING PIN ──
+  ScrollTrigger.create({
+    trigger: '#act4',
+    start: 'top top',
+    end: 'bottom bottom',
+    pin: '#act4-sticky',
+    anticipatePin: 1
+  });
+
+  // Mars planet grows
+  gsap.to('#mars-planet', {
+    width: '140vmax', height: '140vmax',
+    ease: 'power2.in',
+    scrollTrigger: { trigger: '#act4', start: 'top top', end: '70% top', scrub: 2 }
+  });
+
+  // Atmosphere glow
+  gsap.fromTo('#mars-atmo', { opacity: 0 }, {
+    opacity: 1,
+    scrollTrigger: { trigger: '#act4', start: '20% top', end: '50% top', scrub: true }
+  });
+  ScrollTrigger.create({
+    trigger: '#act4',
+    start: '25% top',
+    end: '55% top',
+    scrub: true,
+    onUpdate: self => {
+      const atmo = document.getElementById('mars-atmo');
+      const size = 60 + self.progress * 50;
+      atmo.style.width = (size + 20) + 'vmax';
+      atmo.style.height = (size + 20) + 'vmax';
+      atmo.style.background = `radial-gradient(ellipse, rgba(232,98,26,0) 60%, rgba(232,98,26,${0.3 * self.progress}) 80%, transparent 100%)`;
+    }
+  });
+
+  // Parachute deployment
+  gsap.to('#parachute-group', {
+    opacity: 1,
+    scrollTrigger: { trigger: '#act4', start: '35% top', end: '50% top', scrub: true }
+  });
+  gsap.fromTo('#parachute-group', { top: '-200px' }, {
+    top: '10vh',
+    ease: 'bounce.out',
+    scrollTrigger: { trigger: '#act4', start: '40% top', end: '70% top', scrub: true }
+  });
+
+  // Landing HUD
+  gsap.to('#landing-hud', {
+    opacity: 1,
+    scrollTrigger: { trigger: '#act4', start: '15% top', end: '30% top', scrub: true }
+  });
+  ScrollTrigger.create({
+    trigger: '#act4',
+    start: 'top top',
+    end: 'bottom bottom',
+    scrub: true,
+    onUpdate: self => {
+      const p = self.progress;
+      const alt = Math.round(10 - p * 10);
+      document.getElementById('land-alt').textContent = alt > 0 ? alt + ' KM' : '0 M';
+      document.getElementById('land-rate').textContent = Math.round(85 - p * 80) + ' M/S';
+      const st = p < 0.3 ? 'ENTRY' : p < 0.6 ? 'CHUTE DEPLOY' : p < 0.85 ? 'DESCENT' : 'TOUCHDOWN';
+      document.getElementById('land-status').textContent = st;
+    }
+  });
+
+  // Touchdown dust
+  ScrollTrigger.create({
+    trigger: '#act4',
+    start: '85% top',
+    onEnter: () => {
+      triggerDust();
+      triggerShake();
+    }
+  });
+
+  // Act 4 title reveal
+  gsap.to('#act4-title', {
+    color: 'rgba(232,98,26,0.9)',
+    textShadow: '0 0 40px rgba(232,98,26,0.6)',
+    scrollTrigger: { trigger: '#act4', start: '5% top', end: '20% top', scrub: true }
+  });
+
+  // ── ACT 5: SURFACE ──
+  ScrollTrigger.create({
+    trigger: '#act5',
+    start: 'top 80%',
+    onEnter: () => {
+      gsap.to('#act5-title', { opacity: 1, y: 0, duration: 1, ease: 'power3.out' });
+      gsap.to('#ecard1', { opacity: 1, y: 0, duration: 0.7, delay: 0.3, ease: 'back.out(1.4)' });
+      gsap.to('#ecard2', { opacity: 1, y: 0, duration: 0.7, delay: 0.5, ease: 'back.out(1.4)' });
+      gsap.to('#ecard3', { opacity: 1, y: 0, duration: 0.7, delay: 0.7, ease: 'back.out(1.4)' });
+      gsap.to('#flag-btn', { opacity: 1, duration: 0.6, delay: 1.2 });
+      gsap.to('#closing-text', { opacity: 1, y: 0, duration: 1, delay: 1.5, ease: 'power2.out' });
+    }
+  });
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// INTERACTIONS
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function triggerShockwave() {
+  const sw = document.getElementById('shockwave');
+  gsap.fromTo(sw,
+    { scale: 0, opacity: 0.8, width: '10px', height: '10px' },
+    { scale: 80, opacity: 0, duration: 1.2, ease: 'power2.out', repeat: 0 }
+  );
+}
+
+function spawnSmoke() {
+  const container = document.getElementById('smoke-container');
+  const particle = document.createElement('div');
+  const size = Math.random() * 40 + 20;
+  const xOffset = (Math.random() - 0.5) * 80;
+
+  particle.style.cssText = `
+    position:absolute;
+    left:calc(50% + ${xOffset}px);
+    bottom:${35}vh;
+    width:${size}px;
+    height:${size}px;
+    border-radius:50%;
+    background:rgba(180,180,180,${Math.random() * 0.15 + 0.05});
+    animation:exhaustSmoke ${Math.random() * 0.8 + 0.8}s ease-out forwards;
+    pointer-events:none;
+  `;
+  container.appendChild(particle);
+  setTimeout(() => particle.remove(), 1600);
+}
+
+function spawnAsteroids() {
+  const parent = document.getElementById('act3-sticky');
+  for (let i = 0; i < 12; i++) {
+    const a = document.createElement('div');
+    a.className = 'asteroid';
+    const size = Math.random() * 12 + 4;
+    a.style.cssText = `
+      left:${Math.random() * 90}%;
+      top:${Math.random() * 80 + 10}%;
+      width:${size}px;
+      height:${size * 0.7}px;
+      --dur:${Math.random() * 6 + 5}s;
+      --delay:${Math.random() * 4}s;
+      animation-delay:var(--delay);
+      opacity:0.4;
+    `;
+    parent.appendChild(a);
+
+    // Scroll-triggered fade
+    ScrollTrigger.create({
+      trigger: '#act3',
+      start: '15% top',
+      end: '85% top',
+      scrub: true,
+      onUpdate: self => { a.style.opacity = self.progress > 0.1 && self.progress < 0.9 ? 0.4 : 0; }
+    });
+  }
+}
+
+function releaseProbe() {
+  const sat = document.getElementById('satellite');
+  const rect = document.getElementById('probe-btn').getBoundingClientRect();
+  sat.style.left = rect.left + 'px';
+  sat.style.top  = rect.top + 'px';
+  sat.style.opacity = '1';
+  sat.style.animation = 'satelliteShoot 1.8s ease-in forwards';
+
+  // Trail effect
+  for (let i = 0; i < 8; i++) {
+    setTimeout(() => {
+      const trail = document.createElement('div');
+      trail.style.cssText = `
+        position:fixed;
+        left:${rect.left - i * 12}px;
+        top:${rect.top - i * 8}px;
+        width:4px;height:4px;
+        border-radius:50%;
+        background:var(--accent-cyan);
+        opacity:${0.6 - i * 0.07};
+        pointer-events:none;
+        z-index:31;
+        transition:opacity 0.5s;
+      `;
+      document.body.appendChild(trail);
+      setTimeout(() => { trail.style.opacity = '0'; setTimeout(() => trail.remove(), 500); }, 100);
+    }, i * 20);
+  }
+
+  setTimeout(() => {
+    sat.style.animation = '';
+    sat.style.opacity = '0';
+  }, 2000);
+}
+
+function triggerDust() {
+  const container = document.getElementById('dust-container');
+  for (let i = 0; i < 30; i++) {
+    const p = document.createElement('div');
+    p.className = 'dust-particle';
+    const size = Math.random() * 30 + 10;
+    const angle = Math.random() * Math.PI * 2;
+    const dist = Math.random() * 150 + 50;
+    p.style.cssText = `
+      left:50%;top:50%;
+      width:${size}px;height:${size * 0.6}px;
+      --dx:${Math.cos(angle) * dist}px;
+      --dy:${Math.sin(angle) * dist * 0.4}px;
+      animation:dustBurst ${Math.random() * 0.8 + 0.6}s ease-out forwards;
+      animation-delay:${Math.random() * 0.2}s;
+    `;
+    container.appendChild(p);
+    setTimeout(() => p.remove(), 1200);
+  }
+}
+
+function triggerShake() {
+  document.getElementById('act4-sticky').classList.add('shaking');
+  setTimeout(() => document.getElementById('act4-sticky').classList.remove('shaking'), 500);
+}
+
+function plantFlag() {
+  const flag = document.getElementById('flag-planted');
+  flag.style.animation = 'flagPlant 0.8s cubic-bezier(0.34,1.56,0.64,1) forwards';
+  flag.style.opacity = '1';
+  document.getElementById('flag-btn').style.display = 'none';
+
+  // Flag wave
+  setTimeout(() => {
+    document.querySelector('#flag-planted rect').style.animation = 'flagWave 2s ease-in-out infinite';
+  }, 900);
+}
+
+function shareJourney() {
+  const msg = 'I just completed the ARES-7 mission to Mars. 7 months in the void. One giant leap for humanity. 🚀🔴 #MarsJourney #ARES7';
+  if (navigator.share) {
+    navigator.share({ title: 'MARS — A Journey Beyond', text: msg });
+  } else {
+    navigator.clipboard?.writeText(msg).then(() => {
+      document.getElementById('share-btn').textContent = 'COPIED TO CLIPBOARD ✓';
+      setTimeout(() => { document.getElementById('share-btn').textContent = 'SHARE YOUR JOURNEY →'; }, 3000);
+    });
+  }
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// NAV SCROLL
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function scrollToAct(n) {
+  document.getElementById('act' + n).scrollIntoView({ behavior: 'smooth' });
+}
+
+function initNavHighlight() {
+  const acts = document.querySelectorAll('section');
+  const navItems = document.querySelectorAll('#nav-acts li');
+
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        navItems.forEach(li => li.classList.remove('active'));
+        const id = e.target.id.replace('act','');
+        const li = document.querySelector(`[data-act="${id}"]`);
+        if (li) li.classList.add('active');
+      }
+    });
+  }, { threshold: 0.3 });
+
+  acts.forEach(a => obs.observe(a));
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// CLOSING TEXT INITIAL STATE
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function initAct5() {
+  gsap.set('#act5-title', { y: 20, opacity: 0 });
+  gsap.set('#closing-text', { y: 30, opacity: 0 });
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// BOOT
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+window.addEventListener('DOMContentLoaded', () => {
+  initAct5();
+  initCursor();
+  initStarfield();
+  initLoader();
+  initNavHighlight();
+  // Scroll animations init after loader
+  setTimeout(initScrollAnimations, 100);
+});
+</script>
+</body>
+</html>
