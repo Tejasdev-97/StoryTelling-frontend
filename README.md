@@ -90,19 +90,3 @@ Tejas Wajve
 ⭐ Support
 
 If you like this project, consider giving it a ⭐ on GitHub!
-
-
----
-
-## ✅ What you do next (important)
-
-1. Open `README.md`  
-2. **Delete everything inside it**  
-3. Paste this  
-4. Save  
-
-Then run:
-```bash
-git add README.md
-git commit -m "updated readme"
-git push
