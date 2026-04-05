@@ -22,8 +22,6 @@
   --text-primary: #f0e6d3;
   --text-dim: #6a5a4a;
   --star-white: #e8f4fd;
-  --glass-bg: rgba(2, 4, 8, 0.55);
-  --card-glow: rgba(0, 212, 255, 0.22);
 }
 
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
@@ -35,51 +33,6 @@ body {
   font-family: 'Syne', sans-serif;
   overflow-x: hidden;
   cursor: none;
-}
-
-/* Touch / coarse pointers: restore system cursor for usability */
-body.has-touch {
-  cursor: auto;
-}
-body.has-touch #cursor,
-body.has-touch #cursor-dot {
-  display: none !important;
-}
-
-/* Immersive frame: vignette + subtle CRT scan (respects reduced motion below) */
-#atmo-vignette {
-  position: fixed;
-  inset: 0;
-  z-index: 5;
-  pointer-events: none;
-  background: radial-gradient(ellipse 85% 70% at 50% 45%, transparent 0%, rgba(0,0,0,0.25) 55%, rgba(0,0,0,0.75) 100%);
-  mix-blend-mode: multiply;
-}
-#scan-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 6;
-  pointer-events: none;
-  opacity: 0.035;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 2px,
-    rgba(0, 212, 255, 0.03) 2px,
-    rgba(0, 212, 255, 0.03) 4px
-  );
-  animation: scanDrift 12s linear infinite;
-}
-#depth-bloom {
-  position: fixed;
-  inset: 0;
-  z-index: 4;
-  pointer-events: none;
-  background:
-    radial-gradient(ellipse 120% 80% at 20% 20%, rgba(0, 212, 255, 0.06) 0%, transparent 45%),
-    radial-gradient(ellipse 100% 60% at 85% 75%, rgba(232, 98, 26, 0.05) 0%, transparent 50%);
-  opacity: 0.9;
-  transition: opacity 1.2s ease;
 }
 
 /* ── CUSTOM CURSOR ── */
@@ -160,28 +113,12 @@ body:hover #cursor { opacity: 1; }
 #progress-bar {
   position: fixed;
   top: 0; left: 0;
-  height: 3px;
-  background: linear-gradient(90deg, var(--mars-orange), var(--flame-yellow), var(--accent-cyan));
+  height: 2px;
+  background: linear-gradient(90deg, var(--mars-orange), var(--accent-cyan));
   z-index: 1000;
   width: 0%;
   transition: width .1s;
-  box-shadow:
-    0 0 12px var(--accent-cyan),
-    0 0 24px rgba(0, 212, 255, 0.35);
-}
-#progress-bar::after {
-  content: '';
-  position: absolute;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 0 12px #fff, 0 0 20px var(--accent-cyan);
-  opacity: 0.9;
-  animation: progressPulse 1.8s ease-in-out infinite;
+  box-shadow: 0 0 10px var(--accent-cyan);
 }
 
 /* ── NAV ── */
@@ -189,17 +126,12 @@ body:hover #cursor { opacity: 1; }
   position: fixed;
   top: 0; left: 0; right: 0;
   z-index: 500;
-  padding: 18px 40px;
+  padding: 20px 40px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   opacity: 0;
-  transition: opacity .5s ease, backdrop-filter .4s ease;
-  backdrop-filter: blur(14px) saturate(1.2);
-  -webkit-backdrop-filter: blur(14px) saturate(1.2);
-  background: linear-gradient(to bottom, var(--glass-bg), rgba(2, 4, 8, 0.2));
-  border-bottom: 1px solid rgba(0, 212, 255, 0.08);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+  transition: opacity .4s;
 }
 #nav.visible { opacity: 1; }
 #nav-logo {
@@ -207,16 +139,10 @@ body:hover #cursor { opacity: 1; }
   font-size: 22px;
   letter-spacing: 0.15em;
   color: var(--text-primary);
-  text-shadow: 0 0 20px rgba(0, 212, 255, 0.25);
-  transition: transform .35s ease, letter-spacing .35s ease;
-}
-#nav.visible #nav-logo:hover {
-  letter-spacing: 0.22em;
-  transform: scale(1.02);
 }
 #nav-acts {
   display: flex;
-  gap: 28px;
+  gap: 32px;
   list-style: none;
 }
 #nav-acts li {
@@ -225,31 +151,9 @@ body:hover #cursor { opacity: 1; }
   letter-spacing: 0.2em;
   color: var(--text-dim);
   cursor: pointer;
-  transition: color .25s ease, transform .25s ease, text-shadow .25s ease;
-  position: relative;
-  padding-bottom: 4px;
+  transition: color .2s;
 }
-#nav-acts li::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  bottom: 0;
-  width: 100%;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--accent-cyan), transparent);
-  transform: scaleX(0);
-  transform-origin: center;
-  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-  opacity: 0.9;
-}
-#nav-acts li:hover::after,
-#nav-acts li.active::after {
-  transform: scaleX(1);
-}
-#nav-acts li:hover, #nav-acts li.active {
-  color: var(--accent-cyan);
-  text-shadow: 0 0 16px rgba(0, 212, 255, 0.35);
-}
+#nav-acts li:hover, #nav-acts li.active { color: var(--accent-cyan); }
 
 /* ── CANVAS (starfield) ── */
 #space-canvas {
@@ -262,7 +166,7 @@ body:hover #cursor { opacity: 1; }
 /* ── SECTIONS ── */
 section {
   position: relative;
-  z-index: 2;
+  z-index: 1;
 }
 
 /* ── ACT 1: HERO ── */
@@ -274,8 +178,6 @@ section {
   justify-content: center;
   text-align: center;
   overflow: hidden;
-  perspective: 1400px;
-  transform-style: preserve-3d;
 }
 
 .hero-overline {
@@ -297,13 +199,9 @@ section {
   color: #fff;
   text-shadow:
     0 0 40px rgba(232, 98, 26, 0.6),
-    0 0 100px rgba(193, 68, 14, 0.3),
-    0 0 2px rgba(255, 255, 255, 0.15);
+    0 0 100px rgba(193, 68, 14, 0.3);
   animation: marsGlow 3s ease-in-out infinite alternate;
   opacity: 0;
-  transform-style: preserve-3d;
-  transform-origin: center center;
-  will-change: transform, opacity;
 }
 
 .hero-subtitle {
@@ -316,12 +214,6 @@ section {
   margin-top: 16px;
   opacity: 0;
 }
-.hero-subtitle .hw {
-  display: inline-block;
-  margin: 0 0.15em;
-}
-.hero-subtitle .hw:first-child { margin-left: 0; }
-.hero-subtitle .hw:last-child { margin-right: 0; }
 
 /* rocket SVG in hero */
 #hero-rocket-wrap {
@@ -330,11 +222,6 @@ section {
   left: 50%;
   transform: translateX(-50%);
   opacity: 0;
-  filter: drop-shadow(0 12px 24px rgba(0, 212, 255, 0.15));
-  will-change: transform;
-}
-.hero-rocket-bob.hero-float {
-  animation: heroRocketFloat 3.2s ease-in-out infinite;
 }
 
 .scroll-hint {
@@ -354,12 +241,10 @@ section {
   animation: fadeIn .5s 3.5s forwards;
 }
 .scroll-arrow {
-  width: 2px;
-  height: 48px;
+  width: 1px;
+  height: 40px;
   background: linear-gradient(to bottom, var(--accent-cyan), transparent);
   animation: scrollPulse 2s ease-in-out infinite;
-  border-radius: 2px;
-  box-shadow: 0 0 8px var(--accent-cyan);
 }
 
 /* ── ACT 2: LAUNCH ── */
@@ -458,9 +343,6 @@ section {
 }
 #hud .hud-label { color: var(--text-dim); }
 #hud .hud-val { color: var(--accent-cyan); }
-#hud.hud-live {
-  animation: hudFlicker 5s ease-in-out infinite;
-}
 
 #act2-title {
   position: absolute;
@@ -552,23 +434,11 @@ section {
 .travel-card-inner {
   border: 1px solid rgba(0, 212, 255, 0.15);
   padding: 28px 32px;
-  background: rgba(2, 4, 8, 0.72);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background: rgba(2, 4, 8, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   position: relative;
   overflow: hidden;
-  transition:
-    transform 0.5s cubic-bezier(0.34, 1.2, 0.64, 1),
-    box-shadow 0.45s ease,
-    border-color 0.35s ease;
-}
-.travel-card:hover .travel-card-inner {
-  transform: translateY(-6px) scale(1.02);
-  border-color: rgba(0, 212, 255, 0.45);
-  box-shadow:
-    0 24px 48px rgba(0, 0, 0, 0.45),
-    0 0 40px var(--card-glow),
-    inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 .travel-card-inner::before {
   content: '';
@@ -576,24 +446,6 @@ section {
   top: 0; left: 0;
   width: 3px; height: 100%;
   background: linear-gradient(to bottom, var(--accent-cyan), transparent);
-  transition: opacity 0.35s ease, width 0.35s ease;
-}
-.travel-card-inner::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    105deg,
-    transparent 40%,
-    rgba(255, 255, 255, 0.06) 50%,
-    transparent 60%
-  );
-  transform: translateX(-100%);
-  transition: transform 0.7s ease;
-  pointer-events: none;
-}
-.travel-card:hover .travel-card-inner::after {
-  transform: translateX(100%);
 }
 .card-stat {
   font-family: 'Bebas Neue', cursive;
@@ -658,15 +510,13 @@ section {
   background: rgba(0,212,255,0.05);
   cursor: pointer;
   text-transform: uppercase;
-  transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.2s, border-color 0.2s;
+  transition: all .2s;
   z-index: 20;
   opacity: 0;
 }
 #probe-btn:hover {
   background: rgba(0,212,255,0.12);
   border-color: rgba(0,212,255,0.6);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 212, 255, 0.2);
 }
 
 /* Satellite */
@@ -691,8 +541,6 @@ section {
   color: rgba(255,255,255,0.07);
   pointer-events: none;
   white-space: nowrap;
-  text-shadow: 0 0 40px rgba(0, 212, 255, 0.08);
-  will-change: transform, opacity, letter-spacing;
 }
 
 /* ── ACT 4: LANDING ── */
@@ -917,10 +765,7 @@ section {
   transform-style: preserve-3d;
   transition: transform .6s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.explore-card:hover .explore-card-inner {
-  transform: rotateY(180deg) scale(1.03);
-  filter: drop-shadow(0 12px 28px rgba(0, 0, 0, 0.35));
-}
+.explore-card:hover .explore-card-inner { transform: rotateY(180deg); }
 .explore-front, .explore-back {
   position: absolute;
   inset: 0;
@@ -1056,12 +901,7 @@ section {
   transition: all .2s;
   box-shadow: 0 0 20px rgba(0,212,255,0.3);
 }
-#share-btn:hover {
-  background: #fff;
-  box-shadow: 0 0 30px rgba(0,212,255,0.5);
-  transform: translateY(-2px) scale(1.02);
-}
-#share-btn { transition: transform 0.25s ease, background 0.2s, box-shadow 0.25s ease; }
+#share-btn:hover { background: #fff; box-shadow: 0 0 30px rgba(0,212,255,0.5); }
 
 /* Act 5 title */
 #act5-title {
@@ -1184,24 +1024,6 @@ section {
   from { background-position: 0 0; }
   to   { background-position: 0 4px; }
 }
-@keyframes scanDrift {
-  from { transform: translateY(0); }
-  to   { transform: translateY(4px); }
-}
-@keyframes progressPulse {
-  0%, 100% { opacity: 0.6; transform: translateY(-50%) scale(1); }
-  50%      { opacity: 1;   transform: translateY(-50%) scale(1.15); }
-}
-@keyframes heroRocketFloat {
-  0%, 100% { transform: translateY(0); }
-  50%      { transform: translateY(-12px); }
-}
-@keyframes hudFlicker {
-  0%, 100% { opacity: 1; }
-  92% { opacity: 0.92; }
-  94% { opacity: 1; }
-  96% { opacity: 0.88; }
-}
 
 /* ── RESPONSIVE ── */
 @media (max-width: 768px) {
@@ -1227,9 +1049,6 @@ section {
     transition-duration: 0.01ms !important;
   }
   #act3 .nebula-layer { animation: none; }
-  #scan-overlay { animation: none !important; opacity: 0.02; }
-  #progress-bar::after { animation: none !important; }
-  .hero-rocket-bob.hero-float { animation: none !important; }
 }
 </style>
 </head>
@@ -1264,9 +1083,6 @@ section {
 
 <!-- THREE.JS CANVAS -->
 <canvas id="space-canvas"></canvas>
-<div id="depth-bloom" aria-hidden="true"></div>
-<div id="atmo-vignette" aria-hidden="true"></div>
-<div id="scan-overlay" aria-hidden="true"></div>
 
 <!-- ━━━━ ACT 1: HERO ━━━━ -->
 <section id="act1">
@@ -1274,13 +1090,10 @@ section {
     MISSION: ARES-7 &nbsp;//<span> _</span>&nbsp; YEAR 2047 &nbsp;//&nbsp; DESTINATION: MARS
   </p>
   <h1 class="hero-title" id="hero-title">MARS</h1>
-  <p class="hero-subtitle" id="hero-subtitle">
-    <span class="hw">A</span><span class="hw">Journey</span><span class="hw">Beyond</span>
-  </p>
+  <p class="hero-subtitle" id="hero-subtitle">A &nbsp;Journey &nbsp;Beyond</p>
 
   <!-- Mini rocket on launchpad -->
   <div id="hero-rocket-wrap">
-    <div class="hero-rocket-bob">
     <svg width="40" height="80" viewBox="0 0 40 80">
       <!-- Rocket body -->
       <ellipse cx="20" cy="30" rx="8" ry="22" fill="#dde6f0"/>
@@ -1302,7 +1115,6 @@ section {
     </svg>
     <!-- Smoke particles -->
     <div id="hero-smoke"></div>
-    </div>
   </div>
 
   <div class="scroll-hint">
@@ -1653,9 +1465,6 @@ section {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 gsap.registerPlugin(ScrollTrigger);
 
-const motionOK = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-const pointer = { x: 0, y: 0 };
-
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // CURSOR
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1664,30 +1473,7 @@ function initCursor() {
   const dot = document.getElementById('cursor-dot');
   let mx = -100, my = -100, cx = -100, cy = -100;
 
-  document.addEventListener('mousemove', e => {
-    mx = e.clientX;
-    my = e.clientY;
-    pointer.x = e.clientX / window.innerWidth - 0.5;
-    pointer.y = e.clientY / window.innerHeight - 0.5;
-    if (motionOK && !document.body.classList.contains('has-touch') && window.scrollY < window.innerHeight * 0.9) {
-      gsap.to('#hero-title', {
-        x: pointer.x * 22,
-        y: pointer.y * 14,
-        rotateY: pointer.x * 2,
-        rotateX: -pointer.y * 1.5,
-        duration: 1.15,
-        ease: 'power2.out',
-        overwrite: 'auto'
-      });
-      gsap.to('#hero-overline', {
-        x: pointer.x * 12,
-        y: pointer.y * 8,
-        duration: 1.25,
-        ease: 'power2.out',
-        overwrite: 'auto'
-      });
-    }
-  });
+  document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
 
   function animate() {
     cx += (mx - cx) * 0.12;
@@ -1758,10 +1544,10 @@ function initStarfield() {
 
   const mat = new THREE.PointsMaterial({
     color: 0xe8f4fd,
-    size: 0.09,
+    size: 0.08,
     sizeAttenuation: true,
     transparent: true,
-    opacity: 0.82,
+    opacity: 0.8,
   });
 
   const stars = new THREE.Points(geo, mat);
@@ -1778,24 +1564,14 @@ function initStarfield() {
     renderer.setSize(window.innerWidth, window.innerHeight);
   });
 
-  let twinkleT = 0;
   function tick() {
     requestAnimationFrame(tick);
-    const scrollProgress = scrollY / Math.max(1, document.body.scrollHeight - window.innerHeight);
+    const scrollProgress = scrollY / (document.body.scrollHeight - window.innerHeight);
     targetSpeed = 0.0003 + scrollProgress * 0.006;
     currentSpeed += (targetSpeed - currentSpeed) * 0.05;
 
     stars.rotation.z += currentSpeed * 0.3;
     camera.position.z = 5 - scrollProgress * 3;
-
-    if (motionOK) {
-      const tx = pointer.x * 0.42;
-      const ty = pointer.y * 0.28;
-      camera.position.x += (tx - camera.position.x) * 0.035;
-      camera.position.y += (-ty - camera.position.y) * 0.035;
-      twinkleT += 0.016;
-      mat.opacity = 0.72 + Math.sin(twinkleT * 1.4) * 0.08 + Math.sin(twinkleT * 2.7 + 1) * 0.06;
-    }
 
     // Warp: move stars toward viewer on high scroll
     if (scrollProgress > 0.3) {
@@ -1822,14 +1598,6 @@ function initLoader() {
   let progress = 0;
   let countdown = 3;
 
-  function pulseCountdown() {
-    if (!motionOK) return;
-    gsap.fromTo(cd,
-      { scale: 1.35, opacity: 0.45, filter: 'blur(6px)' },
-      { scale: 1, opacity: 1, filter: 'blur(0px)', duration: 0.45, ease: 'back.out(2)' }
-    );
-  }
-
   const interval = setInterval(() => {
     progress += 2;
     bar.style.width = progress + '%';
@@ -1837,22 +1605,15 @@ function initLoader() {
     const si = Math.floor((progress / 100) * statuses.length);
     status.textContent = statuses[Math.min(si, statuses.length - 1)];
 
-    if (progress >= 33 && countdown === 3) { countdown = 2; cd.textContent = '2'; pulseCountdown(); }
-    if (progress >= 66 && countdown === 2) { countdown = 1; cd.textContent = '1'; pulseCountdown(); }
-    if (progress >= 95 && countdown === 1) { countdown = 0; cd.textContent = 'LAUNCH'; pulseCountdown(); }
+    if (progress >= 33 && countdown === 3) { countdown = 2; cd.textContent = '2'; }
+    if (progress >= 66 && countdown === 2) { countdown = 1; cd.textContent = '1'; }
+    if (progress >= 95 && countdown === 1) { countdown = 0; cd.textContent = 'LAUNCH'; }
 
     if (progress >= 100) {
       clearInterval(interval);
       setTimeout(() => {
-        gsap.to(loader, { opacity: 0, duration: 0.85, ease: 'power2.inOut', onComplete: () => { loader.style.display = 'none'; } });
-        const nav = document.getElementById('nav');
-        nav.classList.add('visible');
-        if (motionOK) {
-          gsap.fromTo(nav,
-            { y: -18, opacity: 0 },
-            { y: 0, opacity: 1, duration: 0.75, ease: 'power3.out', clearProps: 'transform,opacity' }
-          );
-        }
+        gsap.to(loader, { opacity: 0, duration: 0.8, onComplete: () => { loader.style.display = 'none'; } });
+        document.getElementById('nav').classList.add('visible');
         revealHero();
       }, 400);
     }
@@ -1863,38 +1624,15 @@ function initLoader() {
 // HERO REVEAL
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function revealHero() {
-  gsap.set('#hero-subtitle', { opacity: 1 });
-  gsap.set('.hw', { opacity: 0, y: 28, rotateX: -20 });
-
   const tl = gsap.timeline();
-  tl.fromTo('#hero-overline',
-    { opacity: 0, y: 28, filter: 'blur(10px)' },
-    { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.85, ease: 'power3.out' })
-    .fromTo('#hero-title',
-      { opacity: 0, y: 120, scale: 0.88, rotateX: 18 },
-      { opacity: 1, y: 0, scale: 1, rotateX: 0, duration: 1.15, ease: 'power4.out' },
-      '-=0.45')
-    .to('.hw', {
-      opacity: 1,
-      y: 0,
-      rotateX: 0,
-      duration: 0.65,
-      stagger: 0.14,
-      ease: 'back.out(1.35)'
-    }, '-=0.55')
-    .fromTo('#hero-rocket-wrap',
-      { opacity: 0, y: 50, scale: 0.85 },
-      { opacity: 1, y: 0, scale: 1, duration: 0.85, ease: 'back.out(1.25)' },
-      '-=0.5');
+  tl.to('#hero-overline', { opacity: 1, duration: 0.6, ease: 'power2.out' })
+    .to('#hero-title', { opacity: 1, duration: 0.8, ease: 'power3.out' }, '-=0.2')
+    .to('#hero-subtitle', { opacity: 1, duration: 0.6, ease: 'power2.out' }, '-=0.4')
+    .to('#hero-rocket-wrap', { opacity: 1, y: 0, duration: 0.6, ease: 'back.out(1.4)' }, '-=0.2');
 
   // Glitch effect on title
   const title = document.getElementById('hero-title');
-  title.style.animation = motionOK
-    ? 'marsGlow 3s ease-in-out infinite alternate, glitch1 8s ease-in-out infinite 4s'
-    : 'none';
-
-  const bob = document.querySelector('.hero-rocket-bob');
-  if (motionOK && bob) bob.classList.add('hero-float');
+  title.style.animation = 'marsGlow 3s ease-in-out infinite alternate, glitch1 8s ease-in-out infinite 4s';
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1902,42 +1640,23 @@ function revealHero() {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function initScrollAnimations() {
 
-  // ── GLOBAL DEPTH / ATMOSPHERE (scroll-reactive) ──
-  const depthBloom = document.getElementById('depth-bloom');
-  ScrollTrigger.create({
-    trigger: 'body',
-    start: 'top top',
-    end: 'bottom bottom',
-    scrub: 0.5,
-    onUpdate: self => {
-      if (!depthBloom) return;
-      const p = self.progress;
-      depthBloom.style.opacity = String(0.55 + p * 0.45);
-    }
-  });
-
   // ── PROGRESS BAR ──
   gsap.to('#progress-bar', {
     width: '100%',
     ease: 'none',
-    scrollTrigger: { trigger: 'body', start: 'top top', end: 'bottom bottom', scrub: 0.25 }
+    scrollTrigger: { trigger: 'body', start: 'top top', end: 'bottom bottom', scrub: 0.3 }
   });
 
   // ── ACT 1 HERO PARALLAX ──
   gsap.to('#act1', {
-    scale: 1.12,
+    scale: 1.08,
     ease: 'none',
     scrollTrigger: { trigger: '#act1', start: 'top top', end: 'bottom top', scrub: true }
   });
   gsap.to('#hero-title', {
-    y: -100, opacity: 0, rotateX: -12,
+    y: -80, opacity: 0,
     ease: 'none',
-    scrollTrigger: { trigger: '#act1', start: '25% top', end: 'bottom top', scrub: true }
-  });
-  gsap.to('#hero-overline, #hero-subtitle, #hero-rocket-wrap', {
-    y: -40, opacity: 0,
-    ease: 'none',
-    scrollTrigger: { trigger: '#act1', start: '35% top', end: 'bottom top', scrub: true }
+    scrollTrigger: { trigger: '#act1', start: '30% top', end: 'bottom top', scrub: true }
   });
 
   // ── ACT 2: LAUNCH PIN ──
@@ -1949,29 +1668,15 @@ function initScrollAnimations() {
     anticipatePin: 1
   });
 
-  // Rocket launch scrub (+ subtle roll for dynamism)
+  // Rocket launch scrub
   gsap.to('#launch-rocket', {
-    y: -(window.innerHeight * 1.25),
-    rotation: motionOK ? 3 : 0,
+    y: -(window.innerHeight * 1.2),
     ease: 'power1.in',
     scrollTrigger: {
       trigger: '#act2',
       start: 'top top',
       end: 'bottom bottom',
-      scrub: 1.2
-    }
-  });
-
-  ScrollTrigger.create({
-    trigger: '#act2',
-    start: 'top top',
-    end: 'bottom bottom',
-    scrub: true,
-    onUpdate: self => {
-      const hud = document.getElementById('hud');
-      if (!hud) return;
-      if (self.progress > 0.04 && self.progress < 0.92) hud.classList.add('hud-live');
-      else hud.classList.remove('hud-live');
+      scrub: 1.5
     }
   });
 
@@ -2126,33 +1831,6 @@ function initScrollAnimations() {
     opacity: 1,
     scrollTrigger: { trigger: '#act3', start: '40% top', end: '55% top', scrub: true }
   });
-
-  // Act 3 title — slow parallax & intensify ghost typography
-  gsap.to('#act3-title', {
-    y: -42,
-    letterSpacing: '0.34em',
-    color: 'rgba(255,255,255,0.16)',
-    textShadow: '0 0 55px rgba(0, 212, 255, 0.15)',
-    ease: 'none',
-    scrollTrigger: { trigger: '#act3', start: 'top top', end: 'bottom bottom', scrub: true }
-  });
-
-  // Thermometer fill reacts to scroll through the void
-  const thermoFill = document.getElementById('thermo-fill');
-  if (thermoFill) {
-    ScrollTrigger.create({
-      trigger: '#act3',
-      start: '48% top',
-      end: '82% top',
-      scrub: true,
-      onUpdate: self => {
-        const p = self.progress;
-        const rise = p * 16;
-        thermoFill.setAttribute('height', String(20 + rise));
-        thermoFill.setAttribute('y', String(28 - rise));
-      }
-    });
-  }
 
   // Act 3 asteroids
   spawnAsteroids();
@@ -2385,8 +2063,7 @@ function plantFlag() {
 
   // Flag wave
   setTimeout(() => {
-    const wave = document.getElementById('flag-wave');
-    if (wave) wave.style.animation = 'flagWave 2s ease-in-out infinite';
+    document.querySelector('#flag-planted rect').style.animation = 'flagWave 2s ease-in-out infinite';
   }, 900);
 }
 
@@ -2439,9 +2116,6 @@ function initAct5() {
 // BOOT
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 window.addEventListener('DOMContentLoaded', () => {
-  if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
-    document.body.classList.add('has-touch');
-  }
   initAct5();
   initCursor();
   initStarfield();
